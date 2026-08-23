@@ -575,6 +575,11 @@ namespace HsMod
                 {
                     int dId = -1;
                     CollectionUtils.ViewMode viewMode = CollectionManager.Get().GetCollectibleDisplay().GetViewMode();
+                    var thisActor = __instance.GetActor();
+                    if (thisActor == null)
+                    {
+                        return true;
+                    }
                     switch (viewMode)
                     {
 
@@ -597,21 +602,21 @@ namespace HsMod
                 return true;
             }
             [HarmonyPostfix]
-            [HarmonyPatch(typeof(BaconCollectionDisplay), "ShowFinisherDetailsDisplay")]
-            public static void PatchShowFinisherDetailsDisplay(ref Hearthstone.DataModels.BattlegroundsFinisherDataModel dataModel, ref Hearthstone.DataModels.BattlegroundsFinisherCollectionPageDataModel pageModel)
+            [HarmonyPatch(typeof(BaconFinisherCollectionDetails), "Show")]
+            public static void PatchShowFinisherDetailsDisplay(ref Hearthstone.DataModels.BattlegroundsFinisherDataModel ___m_dataModel)
             {
                 if (isShowCollectionCardIdEnable.Value)
                 {
-                    UIStatus.Get().AddInfo($"ID: {dataModel.FinisherDbiId}");
+                    UIStatus.Get().AddInfo($"ID: {___m_dataModel?.FinisherDbiId}");
                 }
             }
             [HarmonyPostfix]
-            [HarmonyPatch(typeof(BaconCollectionDisplay), "ShowBoardDetailsDisplay")]
-            public static void PatchShowBoardDetailsDisplay(ref Hearthstone.DataModels.BattlegroundsBoardSkinDataModel dataModel, ref Hearthstone.DataModels.BattlegroundsBoardSkinCollectionPageDataModel pageModel)
+            [HarmonyPatch(typeof(BaconBoardCollectionDetails), "Show")]
+            public static void PatchShowBoardDetailsDisplay(ref Hearthstone.DataModels.BattlegroundsBoardSkinDataModel ___m_dataModel)
             {
                 if (isShowCollectionCardIdEnable.Value)
                 {
-                    UIStatus.Get().AddInfo($"ID: {dataModel.BoardDbiId}");
+                    UIStatus.Get().AddInfo($"ID: {___m_dataModel?.BoardDbiId}");
                 }
             }
 
@@ -727,7 +732,7 @@ namespace HsMod
             }
 
             //toast变速修改
-            [HarmonyTranspiler]
+            [HarmonyPrefix]
             [HarmonyPatch(typeof(SocialToastMgr), "AddToast", new Type[]
             {
                     typeof(UserAttentionBlocker),
@@ -736,19 +741,9 @@ namespace HsMod
                     typeof(float),
                     typeof(bool)
             })]
-            public static IEnumerable<CodeInstruction> PatchSocialToastMgrAddToast(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+            public static void PatchSocialToastMgrAddToast(ref float __3)
             {
-                List<CodeInstruction> list = new List<CodeInstruction>(instructions);
-                int num = list.FindIndex((CodeInstruction x) => x.opcode == OpCodes.Ret);
-                if (num > 0)
-                {
-                    num++;
-                    list.Insert(num++, new CodeInstruction(OpCodes.Ldarg_3));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Call, typeof(Time).GetProperty("timeScale", BindingFlags.Static | BindingFlags.Public).GetGetMethod()));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Mul));
-                    list.Insert(num++, new CodeInstruction(OpCodes.Starg_S, (byte)3));
-                }
-                return list;
+                __3 *= Time.timeScale;
             }
 
             [HarmonyPostfix]
